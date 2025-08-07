@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -121,141 +122,150 @@
   <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
   <script>
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyD4K2kMEU6sS_CWBcIC26VrnmDw5DgYOzA",
+      authDomain: "flower-journey.firebaseapp.com",
+      projectId: "flower-journey",
+      storageBucket: "flower-journey.appspot.com",
+      messagingSenderId: "982716295253",
+      appId: "1:982716295253:web:86e74cbd7fc940c8bcaba1"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    const flowerIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/290/290990.png', iconSize: [32, 32], iconAnchor: [16, 32] });
+    const refIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/535/535239.png', iconSize: [32, 32], iconAnchor: [16, 32] });
+
     const map = L.map('map', {
-      minZoom: 3,
+      minZoom: 2,
       worldCopyJump: true
-    }).setView([41.9, 12.5], 5);
+    }).setView([0, 0], 2);
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: 'Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
+      attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    const flowerIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/616/616408.png', iconSize: [32, 32] });
-    const refIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/484/484167.png', iconSize: [32, 32] });
     const markers = L.markerClusterGroup();
-    let addMode = false, areaCenter = null, referencePoint = null;
+    map.addLayer(markers);
 
-    function loadFlowers() {
-      db.collection("flowers").get().then(querySnapshot => {
-        querySnapshot.forEach(doc => {
-          const d = doc.data();
-          const m = L.marker([d.lat, d.lng], { icon: flowerIcon }).bindPopup(d.name);
-          markers.addLayer(m);
-          const opt = document.createElement("option");
-          opt.value = d.name;
-          document.getElementById("flowersList").appendChild(opt);
+    const flowersList = document.getElementById("flowersList");
+    const gbifSuggestions = document.getElementById("gbifSuggestions");
+
+    let currentFlowerName = "";
+    let addMode = false;
+    let referenceMarker = null;
+    let areaCenter = null;
+    let areaCircle = null;
+
+    function addFlowerToMap(doc) {
+      const marker = L.marker([doc.lat, doc.lng], { icon: flowerIcon }).bindPopup(`<b>${doc.name}</b>`);
+      markers.addLayer(marker);
+    }
+
+    function updateFlowersList() {
+      flowersList.innerHTML = "";
+      db.collection("flowers").get().then(snapshot => {
+        snapshot.forEach(doc => {
+          const option = document.createElement("option");
+          option.value = doc.data().name;
+          flowersList.appendChild(option);
         });
       });
     }
 
-    loadFlowers();
-    map.addLayer(markers);
+    db.collection("flowers").onSnapshot(snapshot => {
+      markers.clearLayers();
+      snapshot.forEach(doc => addFlowerToMap(doc.data()));
+      updateFlowersList();
+    });
 
     document.getElementById("addFlowerBtn").onclick = () => {
       addMode = true;
       document.getElementById("newFlowerName").disabled = false;
     };
 
-    map.on("click", e => {
-      if (!addMode) return;
-      const name = document.getElementById("newFlowerName").value.trim();
-      if (!name) return alert("Please enter a flower name");
-      db.collection("flowers").add({ name, lat: e.latlng.lat, lng: e.latlng.lng });
-      const marker = L.marker(e.latlng, { icon: flowerIcon }).bindPopup(name);
-      markers.addLayer(marker);
-      addMode = false;
-      document.getElementById("newFlowerName").value = "";
-      document.getElementById("newFlowerName").disabled = true;
-    });
-
-    document.getElementById("confirmAddBtn").onclick = () => {
-      if (!addMode) alert("Click 'Add' first, then click on the map.");
-    };
-
-    document.getElementById("searchName").addEventListener("change", () => {
-      const name = document.getElementById("searchName").value;
-      db.collection("flowers").where("name", "==", name).get().then(q => {
-        q.forEach(doc => {
-          const d = doc.data();
-          map.setView([d.lat, d.lng], 10);
-        });
+    document.getElementById("newFlowerName").addEventListener("input", async (e) => {
+      const query = e.target.value;
+      if (!query) return;
+      const res = await fetch(`https://api.gbif.org/v1/species/suggest?q=${query}`);
+      const data = await res.json();
+      gbifSuggestions.innerHTML = "";
+      data.forEach(species => {
+        const option = document.createElement("option");
+        option.value = species.scientificName;
+        gbifSuggestions.appendChild(option);
       });
     });
 
+    let tempLatLng = null;
+    map.on("click", e => {
+      if (!addMode) return;
+      tempLatLng = e.latlng;
+    });
+
+    document.getElementById("confirmAddBtn").onclick = async () => {
+      if (!tempLatLng) return;
+      const name = document.getElementById("newFlowerName").value;
+      if (!name) return;
+      const res = await fetch(`https://api.gbif.org/v1/species/match?name=${name}`);
+      const match = await res.json();
+      if (match.matchType !== "EXACT") return alert("Invalid scientific name.");
+
+      await db.collection("flowers").add({ name, lat: tempLatLng.lat, lng: tempLatLng.lng });
+
+      document.getElementById("newFlowerName").value = "";
+      document.getElementById("newFlowerName").disabled = true;
+      addMode = false;
+      tempLatLng = null;
+    };
+
     document.getElementById("setReference").onclick = () => {
       map.once("click", e => {
-        if (referencePoint) map.removeLayer(referencePoint);
-        referencePoint = L.marker(e.latlng, { icon: refIcon }).addTo(map);
+        if (referenceMarker) map.removeLayer(referenceMarker);
+        referenceMarker = L.marker(e.latlng, { icon: refIcon }).addTo(map).bindPopup("Reference Point").openPopup();
       });
     };
 
     document.getElementById("removeReference").onclick = () => {
-      if (referencePoint) map.removeLayer(referencePoint);
-      referencePoint = null;
+      if (referenceMarker) map.removeLayer(referenceMarker);
+      referenceMarker = null;
     };
 
     document.getElementById("findNearest").onclick = () => {
-      if (!referencePoint) return alert("Set a reference point first");
-      let minDist = Infinity, closest = null;
-      markers.eachLayer(m => {
-        const dist = referencePoint.getLatLng().distanceTo(m.getLatLng());
+      if (!referenceMarker) return;
+      let minDist = Infinity;
+      let nearest = null;
+      markers.eachLayer(marker => {
+        const dist = map.distance(referenceMarker.getLatLng(), marker.getLatLng());
         if (dist < minDist) {
           minDist = dist;
-          closest = m;
+          nearest = marker;
         }
       });
-      if (closest) map.setView(closest.getLatLng(), 12);
+      if (nearest) nearest.openPopup();
     };
 
     document.getElementById("setAreaPoint").onclick = () => {
       map.once("click", e => {
-        if (areaCenter) map.removeLayer(areaCenter);
-        areaCenter = L.circle(e.latlng, { radius: 1000 }).addTo(map);
+        if (areaCircle) map.removeLayer(areaCircle);
+        areaCenter = e.latlng;
+        areaCircle = L.circle(areaCenter, { radius: parseInt(document.getElementById("radius").value), color: "yellow" }).addTo(map);
       });
     };
 
     document.getElementById("removeArea").onclick = () => {
-      if (areaCenter) map.removeLayer(areaCenter);
+      if (areaCircle) map.removeLayer(areaCircle);
+      areaCircle = null;
       areaCenter = null;
     };
 
     document.getElementById("findInArea").onclick = () => {
-      if (!areaCenter) return alert("Set area center first");
-      const r = parseInt(document.getElementById("radius").value);
-      areaCenter.setRadius(r);
-      const flowersInArea = [];
-      markers.eachLayer(m => {
-        const d = areaCenter.getLatLng().distanceTo(m.getLatLng());
-        if (d <= r) flowersInArea.push(m.getPopup().getContent());
+      if (!areaCircle) return;
+      const radius = parseInt(document.getElementById("radius").value);
+      markers.eachLayer(marker => {
+        const dist = map.distance(areaCenter, marker.getLatLng());
+        if (dist <= radius) marker.openPopup();
       });
-      alert("Flowers in area: " + flowersInArea.join(", "));
     };
-
-    document.getElementById("newFlowerName").addEventListener("input", e => {
-      const q = e.target.value;
-      if (q.length < 2) return;
-      fetch(`https://api.gbif.org/v1/species/suggest?q=${q}`)
-        .then(res => res.json())
-        .then(data => {
-          const list = document.getElementById("gbifSuggestions");
-          list.innerHTML = "";
-          data.forEach(d => {
-            const opt = document.createElement("option");
-            opt.value = d.scientificName;
-            list.appendChild(opt);
-          });
-        });
-    });
   </script>
 </body>
 </html>
-
