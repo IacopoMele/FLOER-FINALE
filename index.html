@@ -1,291 +1,412 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Flower Journey Map</title>
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-/>
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"
-/>
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"
-/>
-<style>
-  html, body {
-    margin: 0; padding: 0; height: 100%;
-    font-family: Arial, sans-serif;
-    display: flex; flex-direction: column;
-  }
-  #filterBar {
-    background: #4CAF50;
-    padding: 10px 15px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px 20px;
-    align-items: center;
-    justify-content: center;
-  }
-  #filterBar > div {
-    display: flex;
-    flex-direction: column;
-    min-width: 120px;
-    color: white;
-    font-weight: 600;
-  }
-  label {
-    margin-bottom: 3px;
-    font-size: 14px;
-  }
-  select {
-    padding: 5px 8px;
-    border-radius: 5px;
-    border: none;
-    font-size: 14px;
-  }
-  button {
-    background: white;
-    color: #4CAF50;
-    border: none;
-    font-weight: 700;
-    border-radius: 6px;
-    padding: 7px 16px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.3s ease;
-  }
-  button:hover {
-    background: #e6e6e6;
-  }
-  #map {
-    flex: 1;
-  }
-  @media (max-width: 600px) {
-    #filterBar {
+  <meta charset="UTF-8" />
+  <title>FLOWER JOURNEY</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+  <style>
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      font-family: Arial, sans-serif;
+      background-color: forestgreen;
+      color: white;
+      overflow: hidden;
+    }
+    body {
+      display: flex;
+      height: 100vh;
+    }
+    #sidebar {
+      width: 340px;
+      background-color: #2e8b57;
+      padding: 20px;
+      box-sizing: border-box;
+      display: flex;
       flex-direction: column;
-      align-items: stretch;
+      gap: 16px;
+      overflow-y: auto;
+      height: 100vh;
     }
-    #filterBar > div {
-      min-width: auto;
+    #map {
+      flex: 1;
+      height: 100vh; /* <-- aggiunto per far vedere la mappa */
+    }
+    h1 {
+      margin: 0 0 15px 0;
+      font-size: 28px;
+      text-align: center;
+      user-select: none;
+    }
+    label {
+      font-size: 15px;
+      user-select: none;
+    }
+    input[type="text"], select {
+      width: 90%;
+      box-sizing: border-box;
+      font-size: 16px;
+      padding: 8px 40px 8px 8px;
+      border-radius: 4px;
+      border: none;
+      margin-top: 6px;
+      color: black;
+      position: relative;
+    }
+    input[type="text"]:disabled {
+      background: #ccc;
+      color: #666;
+    }
+    button, .clear-btn {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: none;
+      background: white;
+      color: black;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.2s ease;
+    }
+    button:hover, .clear-btn:hover {
+      background: #ddd;
+    }
+    .input-container {
+      position: relative;
       width: 100%;
     }
-    button {
-      width: 100%;
+    .clear-btn {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      font-weight: bold;
+      line-height: 28px;
+      text-align: center;
+      border-radius: 50%;
+      background: #eee;
+      color: #333;
+      display: none;
+      user-select: none;
     }
-  }
-</style>
+    .clear-btn.show {
+      display: block;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #3a9960;
+      margin: 15px 0;
+    }
+  </style>
 </head>
 <body>
+  <div id="sidebar">
+    <h1>FLOWER JOURNEY</h1>
 
-<div id="filterBar">
-  <div>
-    <label for="placeSelect">Place</label>
-    <select id="placeSelect">
-      <option value="">-- All Places --</option>
+    <button id="addFlowerBtn">➕ Add Flower</button>
+
+    <label for="newFlowerName">🌸 New flower name:</label>
+    <div class="input-container">
+      <input type="text" id="newFlowerName" placeholder="Choose position first" disabled autocomplete="off" list="gbifSuggestions" />
+      <datalist id="gbifSuggestions"></datalist>
+    </div>
+
+    <hr />
+
+    <label>🔴 Reference Point:</label>
+    <button id="setReference">Set Reference Point</button>
+    <button id="removeReference">Remove Reference Point</button>
+
+    <hr />
+
+    <label for="searchName">🔍 Search flower by name:</label>
+    <div class="input-container">
+      <input list="flowersList" id="searchName" placeholder="Search existing flower..." autocomplete="off" />
+      <button class="clear-btn" id="clearSearchBtn" title="Clear search">×</button>
+    </div>
+    <datalist id="flowersList"></datalist>
+    <button id="findNearest">Find Nearest to Reference Point</button>
+
+    <hr />
+
+    <label>📍 Flowers in area:</label>
+    <button id="setAreaPoint">Set Center</button>
+    <button id="removeArea">Remove Area</button>
+    <select id="radius">
+      <option value="1000">1 km</option>
+      <option value="5000">5 km</option>
+      <option value="10000">10 km</option>
+      <option value="100000">100 km</option>
+      <option value="1000000">1000 km</option>
     </select>
+    <button id="findInArea">Find in Area</button>
   </div>
-  <div>
-    <label for="nameSelect">Name</label>
-    <select id="nameSelect">
-      <option value="">-- All Names --</option>
-    </select>
-  </div>
-  <div>
-    <label for="colorSelect">Color</label>
-    <select id="colorSelect">
-      <option value="">-- All Colors --</option>
-    </select>
-  </div>
-  <div>
-    <label for="radiusSelect">Radius (m)</label>
-    <select id="radiusSelect">
-      <option value="1000">1000</option>
-      <option value="3000">3000</option>
-      <option value="5000" selected>5000</option>
-      <option value="10000">10000</option>
-    </select>
-  </div>
-  <div>
-    <button id="setAreaPointBtn" title="Click map to set area center">Set Area Center</button>
-  </div>
-  <div>
-    <button id="findInAreaBtn" title="Filter markers in area">Find in Area</button>
-  </div>
-  <div>
-    <button id="resetBtn" title="Reset filters">Reset Filters</button>
-  </div>
-</div>
 
-<div id="map"></div>
+  <div id="map"></div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-<script>
-  const flowerData = [
-    { place: "Rome", name: "Rose", color: "Red", lat: 41.9028, lng: 12.4964 },
-    { place: "Rome", name: "Lily", color: "White", lat: 41.905, lng: 12.49 },
-    { place: "Florence", name: "Sunflower", color: "Yellow", lat: 43.7696, lng: 11.2558 },
-    { place: "Milan", name: "Tulip", color: "Pink", lat: 45.4642, lng: 9.19 },
-    { place: "Naples", name: "Orchid", color: "Purple", lat: 40.8518, lng: 14.2681 },
-  ];
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 
-  const map = L.map("map").setView([41.9, 12.5], 6);
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 18,
-  }).addTo(map);
+    const firebaseConfig = {
+      apiKey: "AIzaSyCIcsEn3PboBjgWOFrgJ2tegiShQWDlhXs",
+      authDomain: "flower-journey.firebaseapp.com",
+      projectId: "flower-journey",
+      storageBucket: "flower-journey.appspot.com",
+      messagingSenderId: "256496147320",
+      appId: "1:256496147320:web:8dad7eccd8a8f85df3068d",
+      measurementId: "G-7EE1418KEC"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  const markerClusterGroup = L.markerClusterGroup();
-  map.addLayer(markerClusterGroup);
+    const map = L.map("map").setView([20, 0], 2);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
 
-  const markers = [];
-  let areaCenterMarker = null;
-  let areaCircle = null;
-
-  const placeSelect = document.getElementById("placeSelect");
-  const nameSelect = document.getElementById("nameSelect");
-  const colorSelect = document.getElementById("colorSelect");
-  const radiusSelect = document.getElementById("radiusSelect");
-  const setAreaPointBtn = document.getElementById("setAreaPointBtn");
-  const findInAreaBtn = document.getElementById("findInAreaBtn");
-  const resetBtn = document.getElementById("resetBtn");
-
-  function populateDropdowns() {
-    const places = [...new Set(flowerData.map(f => f.place))].sort();
-    const names = [...new Set(flowerData.map(f => f.name))].sort();
-    const colors = [...new Set(flowerData.map(f => f.color))].sort();
-
-    places.forEach(p => {
-      const option = document.createElement("option");
-      option.value = p;
-      option.textContent = p;
-      placeSelect.appendChild(option);
+    const flowerIcon = new L.Icon({
+      iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-green.png",
+      shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+    const referenceIcon = new L.Icon({
+      iconUrl: "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-red.png",
+      shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
     });
 
-    names.forEach(n => {
-      const option = document.createElement("option");
-      option.value = n;
-      option.textContent = n;
-      nameSelect.appendChild(option);
-    });
+    let markers = [];
+    let referenceMarker = null;
+    let referencePoint = null;
+    let areaPoint = null;
+    let areaCircle = null;
 
-    colors.forEach(c => {
-      const option = document.createElement("option");
-      option.value = c;
-      option.textContent = c;
-      colorSelect.appendChild(option);
-    });
-  }
+    // Gruppo cluster
+    const markerClusterGroup = L.markerClusterGroup();
+    map.addLayer(markerClusterGroup);
 
-  function createMarkers() {
-    flowerData.forEach(f => {
-      const marker = L.marker([f.lat, f.lng], {title: `${f.name} (${f.color}) in ${f.place}`})
-        .bindPopup(`<b>${f.name}</b><br/>Color: ${f.color}<br/>Place: ${f.place}`);
-      marker.data = f;
-      markers.push(marker);
-      markerClusterGroup.addLayer(marker);
-    });
-  }
+    const addFlowerBtn = document.getElementById("addFlowerBtn");
+    const newFlowerNameInput = document.getElementById("newFlowerName");
+    const gbifSuggestions = document.getElementById("gbifSuggestions");
 
-  function filterMarkers() {
-    const placeVal = placeSelect.value;
-    const nameVal = nameSelect.value;
-    const colorVal = colorSelect.value;
-    const radius = parseInt(radiusSelect.value, 10);
+    const setReferenceBtn = document.getElementById("setReference");
+    const removeReferenceBtn = document.getElementById("removeReference");
 
-    markerClusterGroup.clearLayers();
+    const searchNameInput = document.getElementById("searchName");
+    const flowersList = document.getElementById("flowersList");
+    const clearSearchBtn = document.getElementById("clearSearchBtn");
+    const findNearestBtn = document.getElementById("findNearest");
 
-    markers.forEach(marker => {
-      const f = marker.data;
+    const setAreaPointBtn = document.getElementById("setAreaPoint");
+    const removeAreaBtn = document.getElementById("removeArea");
+    const radiusSelect = document.getElementById("radius");
+    const findInAreaBtn = document.getElementById("findInArea");
 
-      if (
-        (placeVal && f.place !== placeVal) ||
-        (nameVal && f.name !== nameVal) ||
-        (colorVal && f.color !== colorVal)
-      ) {
-        return;
-      }
+    async function loadFlowers() {
+      const querySnapshot = await getDocs(collection(db, "flowers"));
 
-      if (areaCenterMarker && areaCircle) {
-        const dist = marker.getLatLng().distanceTo(areaCenterMarker.getLatLng());
-        if (dist > radius) return;
-      }
+      // Svuota mappa e array
+      markerClusterGroup.clearLayers();
+      markers = [];
+      flowersList.innerHTML = "";
 
-      markerClusterGroup.addLayer(marker);
-    });
-  }
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const marker = L.marker([data.lat, data.lng], { icon: flowerIcon, title: data.name })
+          .bindTooltip(data.name, { direction: "top" })
+          .bindPopup(`<strong>${data.name}</strong>`);
+        marker.meta = { name: data.name.toLowerCase(), latlng: marker.getLatLng() };
+        markers.push(marker);
+        markerClusterGroup.addLayer(marker);
 
-  [placeSelect, nameSelect, colorSelect].forEach(sel =>
-    sel.addEventListener("change", filterMarkers)
-  );
-
-  radiusSelect.addEventListener("change", () => {
-    if (areaCircle && areaCenterMarker) {
-      const radius = parseInt(radiusSelect.value, 10);
-      areaCircle.setRadius(radius);
-      filterMarkers();
+        const option = document.createElement("option");
+        option.value = data.name;
+        flowersList.appendChild(option);
+      });
     }
-  });
+    await loadFlowers();
 
-  setAreaPointBtn.addEventListener("click", () => {
-    alert("Click on the map to set the center point for the area filter");
-    map.once("click", e => {
-      if (areaCenterMarker) map.removeLayer(areaCenterMarker);
+    let newFlowerLatLng = null;
+
+    addFlowerBtn.addEventListener("click", () => {
+      alert("Click on the map to choose where to add a new flower.");
+      newFlowerLatLng = null;
+      newFlowerNameInput.value = "";
+      newFlowerNameInput.disabled = true;
+      newFlowerNameInput.placeholder = "Choose position first";
+      gbifSuggestions.innerHTML = "";
+
+      map.once("click", e => {
+        newFlowerLatLng = e.latlng;
+        alert(`Position chosen: ${newFlowerLatLng.lat.toFixed(4)}, ${newFlowerLatLng.lng.toFixed(4)}\nNow enter the flower name.`);
+        newFlowerNameInput.disabled = false;
+        newFlowerNameInput.placeholder = "Enter flower name";
+        newFlowerNameInput.focus();
+      });
+    });
+
+    let gbifTimeout;
+    newFlowerNameInput.addEventListener("input", () => {
+      const query = newFlowerNameInput.value.trim();
+      gbifSuggestions.innerHTML = "";
+      if (query.length < 3) return;
+      if (gbifTimeout) clearTimeout(gbifTimeout);
+      gbifTimeout = setTimeout(async () => {
+        try {
+          const response = await fetch(`https://api.gbif.org/v1/species/suggest?q=${encodeURIComponent(query)}&limit=5`);
+          if (!response.ok) throw new Error("GBIF API error");
+          const results = await response.json();
+          gbifSuggestions.innerHTML = "";
+          results.forEach(item => {
+            if (item.scientificName) {
+              const option = document.createElement("option");
+              option.value = item.scientificName;
+              gbifSuggestions.appendChild(option);
+            }
+          });
+        } catch {}
+      }, 300);
+    });
+
+    const confirmAddFlower = async () => {
+      if (!newFlowerLatLng) return alert("Choose a position on the map first.");
+      const name = newFlowerNameInput.value.trim();
+      if (!name) return alert("Please enter a flower name.");
+      try {
+        const res = await fetch(`https://api.gbif.org/v1/species/match?name=${encodeURIComponent(name)}`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        if (!data.usageKey) return alert("Flower name not recognized by GBIF API.");
+      } catch {
+        return alert("Error validating flower name.");
+      }
+      try {
+        await addDoc(collection(db, "flowers"), {
+          name: name,
+          lat: newFlowerLatLng.lat,
+          lng: newFlowerLatLng.lng
+        });
+        alert("Flower added!");
+        await loadFlowers();
+      } catch {
+        alert("Error saving flower to database.");
+      }
+      newFlowerNameInput.value = "";
+      newFlowerNameInput.disabled = true;
+      newFlowerNameInput.placeholder = "Choose position first";
+    };
+
+    newFlowerNameInput.addEventListener("keypress", async (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        await confirmAddFlower();
+      }
+    });
+
+    const confirmAddBtn = document.createElement("button");
+    confirmAddBtn.textContent = "Confirm Add Flower";
+    confirmAddBtn.style.marginTop = "8px";
+    confirmAddBtn.addEventListener("click", confirmAddFlower);
+    newFlowerNameInput.parentNode.appendChild(confirmAddBtn);
+
+    setReferenceBtn.addEventListener("click", () => {
+      alert("Click on the map to set the reference point.");
+      map.once("click", e => {
+        if (referenceMarker) map.removeLayer(referenceMarker);
+        referencePoint = e.latlng;
+        referenceMarker = L.marker(referencePoint, { icon: referenceIcon, title: "Reference Point" })
+          .addTo(map)
+          .bindPopup("<b>Reference Point</b>")
+          .openPopup();
+      });
+    });
+
+    removeReferenceBtn.addEventListener("click", () => {
+      if (referenceMarker) {
+        map.removeLayer(referenceMarker);
+        referenceMarker = null;
+        referencePoint = null;
+      }
+    });
+
+    findNearestBtn.addEventListener("click", () => {
+      const searchName = searchNameInput.value.trim().toLowerCase();
+      if (!searchName) return alert("Please enter a flower name to search.");
+      if (!referencePoint) return alert("Please set a reference point first.");
+      const matchingMarkers = markers.filter(m => m.meta.name === searchName);
+      if (matchingMarkers.length === 0) return alert("No flowers found with that name.");
+      let nearestMarker = matchingMarkers[0];
+      let minDist = referencePoint.distanceTo(nearestMarker.getLatLng());
+      for (const marker of matchingMarkers) {
+        const dist = referencePoint.distanceTo(marker.getLatLng());
+        if (dist < minDist) {
+          minDist = dist;
+          nearestMarker = marker;
+        }
+      }
+      map.setView(nearestMarker.getLatLng(), 15);
+      nearestMarker.openPopup();
+    });
+
+    clearSearchBtn.addEventListener("click", () => {
+      searchNameInput.value = "";
+      clearSearchBtn.classList.remove("show");
+    });
+
+    searchNameInput.addEventListener("input", () => {
+      clearSearchBtn.classList.toggle("show", searchNameInput.value.length > 0);
+    });
+
+    setAreaPointBtn.addEventListener("click", () => {
+      alert("Click on the map to set the center of the area.");
+      map.once("click", e => {
+        if (areaPoint) {
+          if (areaCircle) map.removeLayer(areaCircle);
+          areaPoint = null;
+        }
+        areaPoint = e.latlng;
+        areaCircle = L.circle(areaPoint, { radius: +radiusSelect.value, color: "red", fillColor: "#f03", fillOpacity: 0.2 }).addTo(map);
+      });
+    });
+
+    removeAreaBtn.addEventListener("click", () => {
+      if (areaCircle) {
+        map.removeLayer(areaCircle);
+        areaCircle = null;
+        areaPoint = null;
+      }
+    });
+
+    radiusSelect.addEventListener("change", () => {
+      if (areaCircle && areaPoint) {
+        areaCircle.setRadius(+radiusSelect.value);
+      }
+    });
+
+    findInAreaBtn.addEventListener("click", () => {
+      if (!areaPoint) return alert("Please set the center of the area first.");
       if (areaCircle) map.removeLayer(areaCircle);
+      areaCircle = L.circle(areaPoint, { radius: +radiusSelect.value, color: "red", fillColor: "#f03", fillOpacity: 0.2 }).addTo(map);
 
-      areaCenterMarker = L.marker(e.latlng, {title: "Area Center"}).addTo(map);
-
-      const radius = parseInt(radiusSelect.value, 10);
-      areaCircle = L.circle(e.latlng, {
-        radius,
-        color: "blue",
-        fillColor: "#3399ff",
-        fillOpacity: 0.25,
-      }).addTo(map);
-
-      filterMarkers();
-      map.setView(e.latlng, 10);
+      const inAreaMarkers = markers.filter(m => areaPoint.distanceTo(m.getLatLng()) <= +radiusSelect.value);
+      if (inAreaMarkers.length === 0) return alert("No flowers found in the selected area.");
+      const group = L.featureGroup(inAreaMarkers);
+      map.fitBounds(group.getBounds().pad(0.5));
     });
-  });
-
-  findInAreaBtn.addEventListener("click", () => {
-    if (!areaCenterMarker) {
-      alert("Please set the area center first");
-      return;
-    }
-    const radius = parseInt(radiusSelect.value, 10);
-    if (areaCircle) areaCircle.setRadius(radius);
-    filterMarkers();
-  });
-
-  resetBtn.addEventListener("click", () => {
-    placeSelect.value = "";
-    nameSelect.value = "";
-    colorSelect.value = "";
-    radiusSelect.value = "5000";
-
-    if (areaCenterMarker) {
-      map.removeLayer(areaCenterMarker);
-      areaCenterMarker = null;
-    }
-    if (areaCircle) {
-      map.removeLayer(areaCircle);
-      areaCircle = null;
-    }
-
-    filterMarkers();
-  });
-
-  populateDropdowns();
-  createMarkers();
-  filterMarkers();
-</script>
-
+  </script>
 </body>
 </html>
-
