@@ -155,7 +155,7 @@
 ></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
-  // Dati esempio (modifica con dati reali)
+  // Esempio dati
   const flowerData = [
     { place: "Rome", name: "Rose", color: "Red", lat: 41.9028, lng: 12.4964 },
     { place: "Rome", name: "Lily", color: "White", lat: 41.905, lng: 12.49 },
@@ -175,7 +175,7 @@
 
   const markers = [];
 
-  // Marker e cerchio area
+  // Area center e cerchio
   let areaCenterMarker = null;
   let areaCircle = null;
 
@@ -187,6 +187,7 @@
   const findInAreaBtn = document.getElementById("findInAreaBtn");
   const resetBtn = document.getElementById("resetBtn");
 
+  // Riempie i dropdown
   function populateDropdowns() {
     const places = [...new Set(flowerData.map(f => f.place))].sort();
     const names = [...new Set(flowerData.map(f => f.name))].sort();
@@ -214,6 +215,7 @@
     });
   }
 
+  // Crea tutti i marker sulla mappa
   function createMarkers() {
     flowerData.forEach(f => {
       const marker = L.marker([f.lat, f.lng], {title: `${f.name} (${f.color}) in ${f.place}`})
@@ -224,6 +226,9 @@
     });
   }
 
+  // Funzione filtro che funziona esattamente come prima:
+  // filtro singolo e combinato per place, name, color
+  // filtro area opzionale se cerchio settato
   function filterMarkers() {
     const placeVal = placeSelect.value;
     const nameVal = nameSelect.value;
@@ -235,6 +240,7 @@
     markers.forEach(marker => {
       const f = marker.data;
 
+      // Filtri dropdown
       if (
         (placeVal && f.place !== placeVal) ||
         (nameVal && f.name !== nameVal) ||
@@ -243,6 +249,7 @@
         return;
       }
 
+      // Se c'è area, filtro per distanza
       if (areaCenterMarker && areaCircle) {
         const dist = marker.getLatLng().distanceTo(areaCenterMarker.getLatLng());
         if (dist > radius) return;
@@ -252,11 +259,12 @@
     });
   }
 
-  // Aggiorna filtro con ogni cambio
+  // Al cambio di dropdown filtro immediatamente
   [placeSelect, nameSelect, colorSelect].forEach(sel =>
     sel.addEventListener("change", filterMarkers)
   );
 
+  // Cambio radius aggiorna cerchio e filtra se cerchio presente
   radiusSelect.addEventListener("change", () => {
     if (areaCircle && areaCenterMarker) {
       const radius = parseInt(radiusSelect.value, 10);
@@ -265,6 +273,7 @@
     }
   });
 
+  // Pulsante "Set Area Center" permette di cliccare sulla mappa per settare il centro area
   setAreaPointBtn.addEventListener("click", () => {
     alert("Click on the map to set the center point for the area filter");
     map.once("click", e => {
@@ -286,6 +295,7 @@
     });
   });
 
+  // Pulsante "Find in Area" applica filtro area (deve esserci centro settato)
   findInAreaBtn.addEventListener("click", () => {
     if (!areaCenterMarker) {
       alert("Please set the area center first");
@@ -296,6 +306,7 @@
     filterMarkers();
   });
 
+  // Reset di tutti i filtri e area
   resetBtn.addEventListener("click", () => {
     placeSelect.value = "";
     nameSelect.value = "";
@@ -314,9 +325,11 @@
     filterMarkers();
   });
 
+  // Inizializzo tutto
   populateDropdowns();
   createMarkers();
   filterMarkers();
 </script>
 </body>
 </html>
+
