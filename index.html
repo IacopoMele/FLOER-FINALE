@@ -17,145 +17,115 @@
   href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"
 />
 <style>
-  body {
-    margin: 0;
+  html, body {
+    margin: 0; padding: 0; height: 100%;
     font-family: Arial, sans-serif;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
+    display: flex; flex-direction: column;
   }
-
-  #sidebar {
-    background-color: #2e8b57;
+  #filterBar {
+    background: #4CAF50;
     padding: 10px 15px;
-    box-sizing: border-box;
-    user-select: none;
     display: flex;
     flex-wrap: wrap;
-    gap: 12px 18px;
+    gap: 10px 20px;
     align-items: center;
     justify-content: center;
   }
-
-  #sidebar label {
+  #filterBar > div {
+    display: flex;
+    flex-direction: column;
+    min-width: 120px;
     color: white;
     font-weight: 600;
-    margin-right: 6px;
-    white-space: nowrap;
-    user-select: none;
   }
-
-  #sidebar select, #sidebar button {
-    border-radius: 6px;
-    border: none;
-    padding: 6px 10px;
+  label {
+    margin-bottom: 3px;
     font-size: 14px;
-    cursor: pointer;
-    min-width: 130px;
-    max-width: 180px;
   }
-
-  #sidebar button {
-    background-color: #4caf50;
-    color: white;
-    transition: background-color 0.2s;
+  select {
+    padding: 5px 8px;
+    border-radius: 5px;
+    border: none;
+    font-size: 14px;
   }
-  #sidebar button:hover {
-    background-color: #45a049;
-  }
-
-  #sidebar > div {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  h1 {
-    color: white;
-    width: 100%;
-    text-align: center;
-    margin: 0 0 8px 0;
+  button {
+    background: white;
+    color: #4CAF50;
+    border: none;
     font-weight: 700;
+    border-radius: 6px;
+    padding: 7px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
   }
-
+  button:hover {
+    background: #e6e6e6;
+  }
   #map {
     flex: 1;
   }
-
-  /* Responsive - su mobile facciamo stack verticale */
   @media (max-width: 600px) {
-    #sidebar {
+    #filterBar {
       flex-direction: column;
-      gap: 10px 0;
+      align-items: stretch;
     }
-    #sidebar > div {
-      justify-content: center;
+    #filterBar > div {
+      min-width: auto;
       width: 100%;
     }
-    #sidebar select, #sidebar button {
-      max-width: 100%;
-      min-width: auto;
+    button {
+      width: 100%;
     }
   }
 </style>
 </head>
 <body>
-  <div id="sidebar">
-    <h1>Flower Journey Map</h1>
 
-    <div>
-      <label for="placeSelect">Place:</label>
-      <select id="placeSelect">
-        <option value="">-- All Places --</option>
-      </select>
-    </div>
-
-    <div>
-      <label for="nameSelect">Name:</label>
-      <select id="nameSelect">
-        <option value="">-- All Names --</option>
-      </select>
-    </div>
-
-    <div>
-      <label for="colorSelect">Color:</label>
-      <select id="colorSelect">
-        <option value="">-- All Colors --</option>
-      </select>
-    </div>
-
-    <div>
-      <label for="radiusSelect">Radius (m):</label>
-      <select id="radiusSelect">
-        <option value="1000">1000</option>
-        <option value="3000">3000</option>
-        <option value="5000" selected>5000</option>
-        <option value="10000">10000</option>
-      </select>
-    </div>
-
-    <div>
-      <button id="setAreaPointBtn" title="Click map to set center for area filter">Set Area Center</button>
-    </div>
-
-    <div>
-      <button id="findInAreaBtn" title="Apply area filter">Find in Area</button>
-    </div>
-
-    <div>
-      <button id="resetBtn" title="Reset all filters">Reset Filters</button>
-    </div>
+<div id="filterBar">
+  <div>
+    <label for="placeSelect">Place</label>
+    <select id="placeSelect">
+      <option value="">-- All Places --</option>
+    </select>
   </div>
+  <div>
+    <label for="nameSelect">Name</label>
+    <select id="nameSelect">
+      <option value="">-- All Names --</option>
+    </select>
+  </div>
+  <div>
+    <label for="colorSelect">Color</label>
+    <select id="colorSelect">
+      <option value="">-- All Colors --</option>
+    </select>
+  </div>
+  <div>
+    <label for="radiusSelect">Radius (m)</label>
+    <select id="radiusSelect">
+      <option value="1000">1000</option>
+      <option value="3000">3000</option>
+      <option value="5000" selected>5000</option>
+      <option value="10000">10000</option>
+    </select>
+  </div>
+  <div>
+    <button id="setAreaPointBtn" title="Click map to set area center">Set Area Center</button>
+  </div>
+  <div>
+    <button id="findInAreaBtn" title="Filter markers in area">Find in Area</button>
+  </div>
+  <div>
+    <button id="resetBtn" title="Reset filters">Reset Filters</button>
+  </div>
+</div>
 
-  <div id="map"></div>
+<div id="map"></div>
 
-<script
-  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-  crossorigin=""
-></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
-  // Esempio dati
   const flowerData = [
     { place: "Rome", name: "Rose", color: "Red", lat: 41.9028, lng: 12.4964 },
     { place: "Rome", name: "Lily", color: "White", lat: 41.905, lng: 12.49 },
@@ -174,8 +144,6 @@
   map.addLayer(markerClusterGroup);
 
   const markers = [];
-
-  // Area center e cerchio
   let areaCenterMarker = null;
   let areaCircle = null;
 
@@ -187,7 +155,6 @@
   const findInAreaBtn = document.getElementById("findInAreaBtn");
   const resetBtn = document.getElementById("resetBtn");
 
-  // Riempie i dropdown
   function populateDropdowns() {
     const places = [...new Set(flowerData.map(f => f.place))].sort();
     const names = [...new Set(flowerData.map(f => f.name))].sort();
@@ -215,7 +182,6 @@
     });
   }
 
-  // Crea tutti i marker sulla mappa
   function createMarkers() {
     flowerData.forEach(f => {
       const marker = L.marker([f.lat, f.lng], {title: `${f.name} (${f.color}) in ${f.place}`})
@@ -226,9 +192,6 @@
     });
   }
 
-  // Funzione filtro che funziona esattamente come prima:
-  // filtro singolo e combinato per place, name, color
-  // filtro area opzionale se cerchio settato
   function filterMarkers() {
     const placeVal = placeSelect.value;
     const nameVal = nameSelect.value;
@@ -240,7 +203,6 @@
     markers.forEach(marker => {
       const f = marker.data;
 
-      // Filtri dropdown
       if (
         (placeVal && f.place !== placeVal) ||
         (nameVal && f.name !== nameVal) ||
@@ -249,7 +211,6 @@
         return;
       }
 
-      // Se c'è area, filtro per distanza
       if (areaCenterMarker && areaCircle) {
         const dist = marker.getLatLng().distanceTo(areaCenterMarker.getLatLng());
         if (dist > radius) return;
@@ -259,12 +220,10 @@
     });
   }
 
-  // Al cambio di dropdown filtro immediatamente
   [placeSelect, nameSelect, colorSelect].forEach(sel =>
     sel.addEventListener("change", filterMarkers)
   );
 
-  // Cambio radius aggiorna cerchio e filtra se cerchio presente
   radiusSelect.addEventListener("change", () => {
     if (areaCircle && areaCenterMarker) {
       const radius = parseInt(radiusSelect.value, 10);
@@ -273,7 +232,6 @@
     }
   });
 
-  // Pulsante "Set Area Center" permette di cliccare sulla mappa per settare il centro area
   setAreaPointBtn.addEventListener("click", () => {
     alert("Click on the map to set the center point for the area filter");
     map.once("click", e => {
@@ -295,7 +253,6 @@
     });
   });
 
-  // Pulsante "Find in Area" applica filtro area (deve esserci centro settato)
   findInAreaBtn.addEventListener("click", () => {
     if (!areaCenterMarker) {
       alert("Please set the area center first");
@@ -306,7 +263,6 @@
     filterMarkers();
   });
 
-  // Reset di tutti i filtri e area
   resetBtn.addEventListener("click", () => {
     placeSelect.value = "";
     nameSelect.value = "";
@@ -325,11 +281,11 @@
     filterMarkers();
   });
 
-  // Inizializzo tutto
   populateDropdowns();
   createMarkers();
   filterMarkers();
 </script>
+
 </body>
 </html>
 
