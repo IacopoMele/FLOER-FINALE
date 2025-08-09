@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -297,7 +298,8 @@
         const formData = new FormData();
         formData.append("organs", "flower");
         formData.append("images", file);
-        const res = await fetch(`https://my-api.plantnet.org/v2/identify/all?api-key=2b10yAEeKtQzbIvPnOeNpGUBuu`, {
+        const res = await fetch(`http://localhost:3000/identify`, {
+
           method: "POST",
           body: formData
         });
