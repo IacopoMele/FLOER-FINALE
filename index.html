@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -31,7 +32,7 @@
     }
     #map {
       flex: 1;
-      height: 100vh; /* <-- aggiunto per far vedere la mappa */
+      height: 100vh;
     }
     h1 {
       margin: 0 0 15px 0;
@@ -43,7 +44,7 @@
       font-size: 15px;
       user-select: none;
     }
-    input[type="text"], select {
+    input[type="text"], select, input[type="file"] {
       width: 90%;
       box-sizing: border-box;
       font-size: 16px;
@@ -114,6 +115,11 @@
       <input type="text" id="newFlowerName" placeholder="Choose position first" disabled autocomplete="off" list="gbifSuggestions" />
       <datalist id="gbifSuggestions"></datalist>
     </div>
+
+    <!-- Nuovo campo: caricamento immagine per riconoscimento -->
+    <label for="flowerImage">📷 Upload image for recognition:</label>
+    <input type="file" id="flowerImage" accept="image/*" disabled />
+    <button id="recognizeFlowerBtn" disabled>Recognize Flower</button>
 
     <hr />
 
@@ -195,13 +201,15 @@
     let areaPoint = null;
     let areaCircle = null;
 
-    // Gruppo cluster
     const markerClusterGroup = L.markerClusterGroup();
     map.addLayer(markerClusterGroup);
 
     const addFlowerBtn = document.getElementById("addFlowerBtn");
     const newFlowerNameInput = document.getElementById("newFlowerName");
     const gbifSuggestions = document.getElementById("gbifSuggestions");
+
+    const flowerImageInput = document.getElementById("flowerImage");
+    const recognizeFlowerBtn = document.getElementById("recognizeFlowerBtn");
 
     const setReferenceBtn = document.getElementById("setReference");
     const removeReferenceBtn = document.getElementById("removeReference");
@@ -218,12 +226,9 @@
 
     async function loadFlowers() {
       const querySnapshot = await getDocs(collection(db, "flowers"));
-
-      // Svuota mappa e array
       markerClusterGroup.clearLayers();
       markers = [];
       flowersList.innerHTML = "";
-
       querySnapshot.forEach((doc) => {
         const data = doc.data();
         const marker = L.marker([data.lat, data.lng], { icon: flowerIcon, title: data.name })
@@ -232,7 +237,6 @@
         marker.meta = { name: data.name.toLowerCase(), latlng: marker.getLatLng() };
         markers.push(marker);
         markerClusterGroup.addLayer(marker);
-
         const option = document.createElement("option");
         option.value = data.name;
         flowersList.appendChild(option);
@@ -247,13 +251,17 @@
       newFlowerLatLng = null;
       newFlowerNameInput.value = "";
       newFlowerNameInput.disabled = true;
+      flowerImageInput.disabled = true;
+      recognizeFlowerBtn.disabled = true;
       newFlowerNameInput.placeholder = "Choose position first";
       gbifSuggestions.innerHTML = "";
 
       map.once("click", e => {
         newFlowerLatLng = e.latlng;
-        alert(`Position chosen: ${newFlowerLatLng.lat.toFixed(4)}, ${newFlowerLatLng.lng.toFixed(4)}\nNow enter the flower name.`);
+        alert(`Position chosen: ${newFlowerLatLng.lat.toFixed(4)}, ${newFlowerLatLng.lng.toFixed(4)}\nNow you can upload an image or enter the flower name.`);
         newFlowerNameInput.disabled = false;
+        flowerImageInput.disabled = false;
+        recognizeFlowerBtn.disabled = false;
         newFlowerNameInput.placeholder = "Enter flower name";
         newFlowerNameInput.focus();
       });
@@ -282,6 +290,30 @@
       }, 300);
     });
 
+    recognizeFlowerBtn.addEventListener("click", async () => {
+      const file = flowerImageInput.files[0];
+      if (!file) return alert("Please upload an image first.");
+      try {
+        const formData = new FormData();
+        formData.append("organs", "flower");
+        formData.append("images", file);
+        const res = await fetch(`https://my-api.plantnet.org/v2/identify/all?api-key=2b10yAEeKtQzbIvPnOeNpGUBuu`, {
+          method: "POST",
+          body: formData
+        });
+        const data = await res.json();
+        if (data.results && data.results.length > 0) {
+          const scientificName = data.results[0].species.scientificNameWithoutAuthor;
+          newFlowerNameInput.value = scientificName;
+          alert(`Recognized as: ${scientificName}`);
+        } else {
+          alert("No match found.");
+        }
+      } catch (err) {
+        alert("Error recognizing flower.");
+      }
+    });
+
     const confirmAddFlower = async () => {
       if (!newFlowerLatLng) return alert("Choose a position on the map first.");
       const name = newFlowerNameInput.value.trim();
@@ -307,6 +339,9 @@
       }
       newFlowerNameInput.value = "";
       newFlowerNameInput.disabled = true;
+      flowerImageInput.value = "";
+      flowerImageInput.disabled = true;
+      recognizeFlowerBtn.disabled = true;
       newFlowerNameInput.placeholder = "Choose position first";
     };
 
@@ -401,7 +436,6 @@
       if (!areaPoint) return alert("Please set the center of the area first.");
       if (areaCircle) map.removeLayer(areaCircle);
       areaCircle = L.circle(areaPoint, { radius: +radiusSelect.value, color: "red", fillColor: "#f03", fillOpacity: 0.2 }).addTo(map);
-
       const inAreaMarkers = markers.filter(m => areaPoint.distanceTo(m.getLatLng()) <= +radiusSelect.value);
       if (inAreaMarkers.length === 0) return alert("No flowers found in the selected area.");
       const group = L.featureGroup(inAreaMarkers);
