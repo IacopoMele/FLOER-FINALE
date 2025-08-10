@@ -9,12 +9,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-"dependencies": {
-  "cors": "^2.8.5",
-  "express": "^5.1.0",
-  "form-data": "^4.0.4",
-  "multer": "^2.0.2",
-  "node-fetch": "^2.7.0"
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "form-data": "^4.0.4",
+    "multer": "^2.0.2",
+    "node-fetch": "^2.7.0"
+  }
 }
-
-
