@@ -24,7 +24,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const plantNetUrl = "https://my-plantnet-api-endpoint/identify";
+  const plantNetUrl = "https://my-api.plantnet.org/identify";
 
     const response = await fetch(plantNetUrl, {
       method: "POST",
@@ -42,3 +42,4 @@ export default async function handler(req, res) {
     res.status(500).json({ error: error.message || "Proxy error" });
   }
 }
+
