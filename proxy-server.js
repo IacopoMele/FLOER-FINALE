@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
@@ -10,7 +9,7 @@ const upload = multer();
 
 const PLANTNET_API_KEY = '2b10S5uRUVldh2Pdamb7DYEu';
 
-// Abilita CORS solo per il tuo dominio GitHub Pages
+// ✅ Abilita CORS per il tuo dominio GitHub Pages
 app.use(cors({
   origin: 'https://iacopomele.github.io'
 }));
@@ -37,6 +36,10 @@ app.post('/identify', upload.single('images'), async (req, res) => {
       }
     );
 
+    if (!response.ok) {
+      return res.status(response.status).json({ error: 'Error from PlantNet API' });
+    }
+
     const data = await response.json();
     res.json(data);
 
@@ -46,7 +49,7 @@ app.post('/identify', upload.single('images'), async (req, res) => {
   }
 });
 
-// Render usa process.env.PORT, non una porta fissa
+// ✅ Porta automatica per Render
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Proxy server running on port ${PORT}`);
