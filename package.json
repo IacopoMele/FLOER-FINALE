@@ -1,15 +1,12 @@
 {
-  "name": "proxy-plantnet",
+  "name": "floer-finale",
   "version": "1.0.0",
-  "main": "proxy-server.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node proxy-server.js"
+    "start": "vercel dev"
   },
   "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.18.2",
-    "form-data": "^4.0.0",
-    "multer": "^1.4.5-lts.1",
-    "node-fetch": "^2.7.0"
-  }
+    "node-fetch": "^3.3.1"
+  },
+  "type": "module"
 }
