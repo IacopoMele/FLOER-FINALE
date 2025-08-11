@@ -1,14 +1,11 @@
 {
   "name": "proxy-plantnet",
   "version": "1.0.0",
-  "description": "",
+  "description": "Proxy per PlantNet API",
   "main": "proxy-server.js",
   "scripts": {
     "start": "node proxy-server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^5.1.0",
