@@ -1,7 +1,13 @@
 import fetch from "node-fetch";
 
+export const config = {
+  api: {
+    bodyParser: false,  // disabilita parsing automatico del body
+  },
+};
+
 export default async function handler(req, res) {
-  // CORS headers
+  // Gestione CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -12,17 +18,24 @@ export default async function handler(req, res) {
   }
 
   try {
-    // URL API PlantNet (modifica con il tuo endpoint vero)
-    const plantNetUrl = "https://my-plantnet-api-endpoint/identify";
+    // URL reale dell'API PlantNet (modifica con il tuo endpoint vero)
+    const plantNetUrl = "https://plantnet-api-url/identify";
 
-    // Forward body e headers
+    // Per inoltrare il body raw devi raccoglierlo manualmente, poiché bodyParser è disabilitato
+    const chunks = [];
+    for await (const chunk of req) {
+      chunks.push(chunk);
+    }
+    const rawBody = Buffer.concat(chunks);
+
+    // Inoltra la richiesta a PlantNet
     const response = await fetch(plantNetUrl, {
       method: req.method,
       headers: {
-        "Content-Type": req.headers["content-type"] || "application/json",
-        // eventuali header come API key, Authorization, ecc.
+        "Content-Type": req.headers["content-type"] || "",
+        // aggiungi qui eventuali header come API key se serve
       },
-      body: req.method !== "GET" ? JSON.stringify(req.body) : null,
+      body: rawBody.length > 0 ? rawBody : null,
     });
 
     const data = await response.json();
