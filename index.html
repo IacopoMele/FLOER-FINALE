@@ -298,11 +298,11 @@
         const formData = new FormData();
         formData.append("organs", "flower");
         formData.append("images", file);
-        const res = await fetch(`https://plantnet-proxy-1bbm.onrender.com`, {
+        const res = fetch("https://plantnet-proxy.onrender.com/identify", {
+    method: "POST",
+    body: formData
+})
 
-          method: "POST",
-          body: formData
-        });
         const data = await res.json();
         if (data.results && data.results.length > 0) {
           const scientificName = data.results[0].species.scientificNameWithoutAuthor;
@@ -446,4 +446,5 @@
   </script>
 </body>
 </html>
+
 
