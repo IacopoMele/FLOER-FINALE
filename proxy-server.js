@@ -1,56 +1,34 @@
-const express = require('express');
-const cors = require('cors');
-const multer = require('multer');
-const fetch = require('node-fetch');
-const FormData = require('form-data');
+import fetch from "node-fetch";
 
-const app = express();
-const upload = multer();
+export default async function handler(req, res) {
+  // CORS headers
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-const PLANTNET_API_KEY = '2b10S5uRUVldh2Pdamb7DYEu';
+  if (req.method === "OPTIONS") {
+    res.status(200).end();
+    return;
+  }
 
-// ✅ Abilita CORS per il tuo dominio GitHub Pages
-app.use(cors({
-  origin: 'https://iacopomele.github.io'
-}));
-
-app.post('/identify', upload.single('images'), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'Image file is required' });
-    }
+    // URL API PlantNet (modifica con il tuo endpoint vero)
+    const plantNetUrl = "https://my-plantnet-api-endpoint/identify";
 
-    const formData = new FormData();
-    formData.append('organs', req.body.organs || 'flower');
-    formData.append('images', req.file.buffer, {
-      filename: req.file.originalname,
-      contentType: req.file.mimetype,
+    // Forward body e headers
+    const response = await fetch(plantNetUrl, {
+      method: req.method,
+      headers: {
+        "Content-Type": req.headers["content-type"] || "application/json",
+        // eventuali header come API key, Authorization, ecc.
+      },
+      body: req.method !== "GET" ? JSON.stringify(req.body) : null,
     });
 
-    const response = await fetch(
-      `https://my-api.plantnet.org/v2/identify/all?api-key=${PLANTNET_API_KEY}`,
-      {
-        method: 'POST',
-        body: formData,
-        headers: formData.getHeaders(),
-      }
-    );
-
-    if (!response.ok) {
-      return res.status(response.status).json({ error: 'Error from PlantNet API' });
-    }
-
     const data = await response.json();
-    res.json(data);
 
+    res.status(response.status).json(data);
   } catch (error) {
-    console.error('Error in proxy:', error);
-    res.status(500).json({ error: 'Proxy server error' });
+    res.status(500).json({ error: error.message || "Proxy error" });
   }
-});
-
-// ✅ Porta automatica per Render
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Proxy server running on port ${PORT}`);
-});
+}
