@@ -1,3 +1,4 @@
+// proxy-server.js
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
@@ -24,11 +25,14 @@ app.post('/identify', upload.single('images'), async (req, res) => {
       contentType: req.file.mimetype,
     });
 
-    const response = await fetch(`https://my-api.plantnet.org/v2/identify/all?api-key=${PLANTNET_API_KEY}`, {
-      method: 'POST',
-      body: formData,
-      headers: formData.getHeaders(),
-    });
+    const response = await fetch(
+      `https://my-api.plantnet.org/v2/identify/all?api-key=${PLANTNET_API_KEY}`,
+      {
+        method: 'POST',
+        body: formData,
+        headers: formData.getHeaders(),
+      }
+    );
 
     if (!response.ok) {
       const errData = await response.json();
@@ -37,14 +41,13 @@ app.post('/identify', upload.single('images'), async (req, res) => {
 
     const data = await response.json();
     res.json(data);
-
   } catch (error) {
     console.error('Error in proxy:', error);
     res.status(500).json({ error: 'Proxy server error' });
   }
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Proxy server running on port ${PORT}`);
 });
