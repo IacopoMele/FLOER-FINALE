@@ -291,30 +291,32 @@
       }, 300);
     });
 
-    recognizeFlowerBtn.addEventListener("click", async () => {
-      const file = flowerImageInput.files[0];
-      if (!file) return alert("Please upload an image first.");
-      try {
-        const formData = new FormData();
-        formData.append("organs", "flower");
-        formData.append("images", file);
-        const res = fetch("https://plantnet-proxy.onrender.com/identify", {
-    method: "POST",
-    body: formData
-})
+   recognizeFlowerBtn.addEventListener("click", async () => {
+  const file = flowerImageInput.files[0];
+  if (!file) return alert("Please upload an image first.");
+  try {
+    const formData = new FormData();
+    formData.append("organs", "flower");
+    formData.append("images", file);
 
-        const data = await res.json();
-        if (data.results && data.results.length > 0) {
-          const scientificName = data.results[0].species.scientificNameWithoutAuthor;
-          newFlowerNameInput.value = scientificName;
-          alert(`Recognized as: ${scientificName}`);
-        } else {
-          alert("No match found.");
-        }
-      } catch (err) {
-        alert("Error recognizing flower.");
-      }
+    // Cambia l'URL da Render a proxy interno Vercel:
+    const res = await fetch("/api/proxy-server", {
+      method: "POST",
+      body: formData
     });
+
+    const data = await res.json();
+    if (data.results && data.results.length > 0) {
+      const scientificName = data.results[0].species.scientificNameWithoutAuthor;
+      newFlowerNameInput.value = scientificName;
+      alert(`Recognized as: ${scientificName}`);
+    } else {
+      alert("No match found.");
+    }
+  } catch (err) {
+    alert("Error recognizing flower.");
+  }
+});
 
     const confirmAddFlower = async () => {
       if (!newFlowerLatLng) return alert("Choose a position on the map first.");
@@ -446,5 +448,6 @@
   </script>
 </body>
 </html>
+
 
 
