@@ -1,4 +1,4 @@
-// proxy-server.js
+
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
@@ -10,7 +10,10 @@ const upload = multer();
 
 const PLANTNET_API_KEY = '2b10S5uRUVldh2Pdamb7DYEu';
 
-app.use(cors());
+// Abilita CORS solo per il tuo dominio GitHub Pages
+app.use(cors({
+  origin: 'https://iacopomele.github.io'
+}));
 
 app.post('/identify', upload.single('images'), async (req, res) => {
   try {
@@ -34,19 +37,16 @@ app.post('/identify', upload.single('images'), async (req, res) => {
       }
     );
 
-    if (!response.ok) {
-      const errData = await response.json();
-      return res.status(response.status).json(errData);
-    }
-
     const data = await response.json();
     res.json(data);
+
   } catch (error) {
     console.error('Error in proxy:', error);
     res.status(500).json({ error: 'Proxy server error' });
   }
 });
 
+// Render usa process.env.PORT, non una porta fissa
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Proxy server running on port ${PORT}`);
